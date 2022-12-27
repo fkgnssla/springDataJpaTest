@@ -76,10 +76,21 @@ class MemberRepositoryTest {
         Member u2 = new Member("u2", 20);
         memberRepository.save(u1);
         memberRepository.save(u2);
-        
+
         List<Member> testBy = memberRepository.findTestBy(); //전체 조회
         for (Member member : testBy) {
             System.out.println("member = " + member);
         }
+    }
+
+    @Test
+    public void testQuery() {
+        Member u1 = new Member("u1", 10);
+        Member u2 = new Member("u2", 20);
+        memberRepository.save(u1);
+        memberRepository.save(u2);
+
+        List<Member> result = memberRepository.findUser("u1", 10);
+        assertThat(result.get(0)).isEqualTo(u1);
     }
 }
