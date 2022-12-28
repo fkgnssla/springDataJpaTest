@@ -3,6 +3,9 @@ package study.datajpa.repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -148,5 +151,39 @@ class MemberRepositoryTest {
         memberRepository.findListByUsername("u1"); //컬렉션
         memberRepository.findMemberByUsername("u1"); //단건
         memberRepository.findOptionalByUsername("u1"); //단건 Optional
+    }
+
+    @Test
+    public void paging() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        //0페이지부터 3개 가져온다.(0,1,2페이지) + 이름으로 역순 정렬
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+        Page<MemberDto> pageMemberDto = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null)); //Dto로 변환
+
+        //then
+        List<Member> content = page.getContent(); //가져온 데이터
+        long totalElements = page.getTotalElements(); //나이가 같은 데이터의 총 개수
+
+        for (Member member : content) {
+            System.out.println("member = " + member);
+        }
+        System.out.println("totalElements = " + totalElements);
+
+        assertThat(content.size()).isEqualTo(3); //가져온 데이터 개수(5개 중 3개)
+        assertThat(totalElements).isEqualTo(5); //데이터 총 개수
+        assertThat(page.getNumber()).isEqualTo(0); //페이지 번호
+        assertThat(page.getTotalPages()).isEqualTo(2); //페이지 개수
+        assertThat(page.isFirst()).isTrue(); //첫 번째 페이지냐? => True
+        assertThat(page.hasNext()).isTrue(); //다음 페이지가 있냐? => True
     }
 }
