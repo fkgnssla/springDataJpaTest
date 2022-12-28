@@ -12,6 +12,8 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,6 +28,8 @@ class MemberRepositoryTest {
     MemberRepository memberRepository;
     @Autowired
     TeamRepository teamRepository;
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     public void testMember() {
@@ -185,5 +189,31 @@ class MemberRepositoryTest {
         assertThat(page.getTotalPages()).isEqualTo(2); //페이지 개수
         assertThat(page.isFirst()).isTrue(); //첫 번째 페이지냐? => True
         assertThat(page.hasNext()).isTrue(); //다음 페이지가 있냐? => True
+    }
+
+    @Test
+    public void bulkUpdate() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        //when
+        int resultCount = memberRepository.bulkAgePlus(20); //데이터의 age가 파라미터 age이상이면 +1
+//        em.clear(); => 대신 bulkAgePlus()의 @Modifying에 clearAutomatically = true를 선언하면 실행 후 자동으로 영속성 컨텍스트를 비운다.
+
+        List<Member> result = memberRepository.findByUsername("member5");
+        Member member = result.get(0); //이 객체의 age는 40일까 41일까?(em.clear(),clearAutomatically = true 전이라고 가정) => 40
+        //(DB:"member5", 41), (영속성 컨텍스트:"member5", 40) 현 시점 상태!
+        //findByUsername()을 날리면 DB에서 조회하여 41을 가져오지만 DB와 영속성 컨텍스트의 값이 달라 충돌한다.
+        //JPA는 영속성 컨텍스트의 동일성을 보장한다.
+        //따라서 DB의 결과 값을 버리고, 1차 캐시에 있는 결과값을 반환하기에 40이 반환된다.
+        //하지만! 이전에 em.clear()를 하면 영속성 컨텍스트를 비우기에 충돌이 나지않아 DB의 값인 41이 잘 반환된다.
+        System.out.println("member = " + member);
+        
+        //then
+        assertThat(resultCount).isEqualTo(3); //업데이트 된 데이터 개수(응답값)
     }
 }
