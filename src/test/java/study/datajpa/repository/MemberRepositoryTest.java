@@ -137,4 +137,16 @@ class MemberRepositoryTest {
             System.out.println("member = " + member);
         }
     }
+
+    @Test
+    public void returnType() {
+        Member u1 = new Member("u1", 10);
+        Member u2 = new Member("u2", 20);
+        memberRepository.save(u1);
+        memberRepository.save(u2);
+
+        memberRepository.findListByUsername("u1"); //컬렉션
+        memberRepository.findMemberByUsername("u1"); //단건
+        memberRepository.findOptionalByUsername("u1"); //단건 Optional
+    }
 }
